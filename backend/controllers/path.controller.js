@@ -12,13 +12,26 @@ export const createPath = async (req, res) => {
     }
   
     const prompt = `
-  Generate a concept roadmap for the CS topic "${path}".
-  Return strictly formatted JSON like:
-  {
-    "nodes": [{ "id": "unique_id", "label": "Topic name" }],
-    "edges": [{ "from": "source_id", "to": "target_id" }]
-  }
-  Return ONLY valid JSON.
+  You are a roadmap assistant. Given a computer science topic, generate a structured and progressive roadmap in JSON format. Each concept must build on its prerequisites, forming a learning path.
+
+Return the roadmap in this JSON format:
+{
+  "nodes": [
+    { "id": "node1", "label": "Concept Name" }
+  ],
+  "edges": [
+    { "from": "node1", "to": "node2" }
+  ]
+}
+
+Rules:
+- Each concept should depend on another if it requires it.
+- Use meaningful labels like "Basic Syntax", "Pointer Arithmetic", etc.
+- Avoid duplicates and keep node count between 10–20 for clarity.
+- Ensure at least one root node and clear progression.
+
+Now generate a roadmap for: "{{path}}"
+Return ONLY valid JSON.
   `;
   
     try {
