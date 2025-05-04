@@ -1,125 +1,135 @@
+import React, { useCallback, useState } from 'react';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { motion } from 'framer-motion';
+import { fetchPathGraph } from '../store/dataStore';
+import ReactFlow, {
+  useEdgesState,
+  useNodesState,
+  Background
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 
-
-import React from 'react'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
-import { motion } from 'framer-motion'
-import { useState } from 'react'
 const PathPage = () => {
-  const [userText, setUserText] = useState("");
+  const [userText, setUserText] = useState('');
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [collapsedParents, setCollapsedParents] = useState({});
+  const [showGraph, setShowGraph] = useState(false);
+
+  const handleSearch = async () => {
+    if (!userText.trim()) return;
+
+    const data = await fetchPathGraph(userText.trim());
+    if (!data) return;
+
+    // Create positioned, non-draggable nodes
+    const positionedNodes = data.nodes.map((node, index) => ({
+      id: node.id,
+      position: {
+        x: 200 * (index % 5),
+        y: Math.floor(index / 5) * 120
+      },
+      data: { label: node.label },
+      type: 'default',
+      draggable: false,
+      selectable: false
+    }));
+
+    const formattedEdges = data.edges.map((edge, index) => ({
+      id: `e-${edge.from}-${edge.to}-${index}`,
+      source: edge.from,
+      target: edge.to
+    }));
+
+    setNodes(positionedNodes);
+    setEdges(formattedEdges);
+    setShowGraph(true);
+  };
+
+  const handleNodeClick = useCallback(
+    (event, node) => {
+      const nodeId = node.id;
+      const isCollapsed = collapsedParents[nodeId];
+
+      const updatedCollapsed = {
+        ...collapsedParents,
+        [nodeId]: !isCollapsed
+      };
+      setCollapsedParents(updatedCollapsed);
+
+      const updatedEdges = isCollapsed
+        ? [...edges, ...edges.filter(e => e.source === nodeId && !edges.find(v => v.id === e.id))]
+        : edges.filter(e => e.source !== nodeId);
+
+      setEdges(updatedEdges);
+    },
+    [collapsedParents, edges]
+  );
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-    <Navbar />
-    <section className="flex flex-col justify-center items-center text-center h-screen px-4">
-    <motion.h2 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.8 }}
-      className="text-5xl md:text-7xl font-bold mb-4"
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="flex flex-col justify-center items-center text-center h-screen px-4">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-5xl md:text-7xl font-bold mb-4"
+        >
+          What do you want to be <span className="text-blue-400">Today.</span>
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-lg text-gray-400 max-w-xl mb-8"
+        >
+          Find an easiest path to your journey!
+        </motion.p>
+        <input
+          type="text"
+          onChange={(e) => setUserText(e.target.value)}
+          value={userText}
+          className="bg-green-100 px-6 py-3 rounded-2xl font-semibold text-black"
+          placeholder="Enter your Target"
+        />
+        <button
+          onClick={handleSearch}
+          className="bg-blue-500 px-6 py-3 m-3 rounded-full font-semibold text-black hover:bg-blue-400 transition"
+        >
+          Search
+        </button>
+      </section>
+
+      {/* Graph Section */}
+      {showGraph && (
+  <div className="flex flex-col justify-center items-center w-auto h-[600px] overflow-auto border-t border-gray-700">
+
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onNodeClick={handleNodeClick}
+      panOnDrag={false}         // ❌ disable panning
+      panOnScroll={false}       // ❌ disable trackpad scroll
+      zoomOnScroll={true}       // ✅ enable scroll-to-zoom
+      zoomOnPinch={true}        // ✅ enable pinch-to-zoom
+      nodesDraggable={false}    // ❌ nodes stay fixed
+      nodesConnectable={false}
+      fitView
     >
-      What do you want to be <span className="text-blue-400">Today.</span>
-    </motion.h2>
-    <motion.p 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      transition={{ delay: 0.5 }}
-      className="text-lg text-gray-400 max-w-xl mb-8"
-    >
-      Find an easiest path to your journey!
-    </motion.p>
-    <input
-     type='text'
-     onChange={(e) => setUserText(e.target.value)}
-     value={userText}
-    className="bg-green-100 px-6 py-3 rounded-2xl font-semibold text-black hover:bg-blue-400 transition"
-    placeholder='Enter your Target' />
-    <button className="bg-blue-500 px-6 py-3 m-3 rounded-full font-semibold text-black hover:bg-blue-400 transition">Search</button>
-    {userText}
-  </section>
-    <Footer />
+      <Background />
+    </ReactFlow>
+  </div>
+)}
+
+      <Footer />
     </div>
-  )
-}
+  );
+};
 
-export default PathPage
-
-
-
-
-
-
-
-
-
-
-// import React, { useCallback, useState } from 'react'
-// import Navbar from '../components/Navbar'
-// import Footer from '../components/Footer'
-// import ReactFlow, { useEdgesState, useNodesState, Background } from 'reactflow'
-// import 'reactflow/dist/style.css';
-
-
-
-// const initialNodes = [
-//   { id: 'arrays', position: { x: 250, y: 0 }, data: { label: 'Arrays' }, type: 'default' },
-//   { id: 'two', position: { x: 100, y: 100 }, data: { label: 'Two Pointers' } },
-//   { id: 'stack', position: { x: 400, y: 100 }, data: { label: 'Stack' } },
-//   { id: 'queue', position: { x: 600, y: 100 }, data: { label: 'Queue' } },
-// ];
-
-// const allEdges = [
-//   { id: 'e1', source: 'arrays', target: 'two' },
-//   { id: 'e2', source: 'arrays', target: 'stack' },
-//   { id: 'e3', source: 'two', target: 'Queue' },
-//   { id: 'e4', source: 'stack', target: 'two' },
-// ];
-
-// const PathPage = () => {
-//   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-//   const [visibleEdges, setVisibleEdges] = useEdgesState(allEdges); // initially show all
-//   const [collapsedParents, setCollapsedParents] = useState({});
-
-//   const handleNodeClick = useCallback((event, node) => {
-//     const nodeId = node.id;
-//     const isCollapsed = collapsedParents[nodeId];
-
-//     // Toggle collapsed state
-//     const updatedCollapsed = {
-//       ...collapsedParents,
-//       [nodeId]: !isCollapsed,
-//     };
-//     setCollapsedParents(updatedCollapsed);
-
-//     // Update edges: filter out or restore based on collapse state
-//     const updatedEdges = isCollapsed
-//       ? [...visibleEdges, ...allEdges.filter(e => e.source === nodeId && !visibleEdges.find(v => v.id === e.id))]
-//       : visibleEdges.filter(e => e.source !== nodeId);
-
-//     setVisibleEdges(updatedEdges);
-//   }, [collapsedParents, visibleEdges]);
-
-//   return (
-//     <div className="min-h-screen bg-black text-white font-sans">
-//       <Navbar />
-      
-
-//       <div style={{ height: '100vh' }}>
-//       <ReactFlow
-//         nodes={nodes}
-//         edges={visibleEdges}
-//         onNodesChange={onNodesChange}
-//         onNodeClick={handleNodeClick}
-//         fitView
-//       >
-//         <Background />
-//       </ReactFlow>
-//      </div>
-
-
-//       <Footer />
-//     </div>
-//   )
-// }
-
-// export default PathPage
+export default PathPage;

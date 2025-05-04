@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 
 const HeroSection = () => {
   return (
@@ -20,14 +21,9 @@ const HeroSection = () => {
     >
       A sleek, modern interface to preview your journey.
     </motion.p>
-    <motion.a 
-      whileHover={{ scale: 1.05 }} 
-      whileTap={{ scale: 0.95 }}
-      href="#features"
-      className="bg-blue-500 px-6 py-3 rounded-full font-semibold text-black hover:bg-blue-400 transition"
-    >
-      Find your Path
-    </motion.a>
+    <Link to ="/path" className="bg-blue-500 px-6 py-3 rounded-full font-semibold text-black hover:bg-blue-400 transition">
+        Find your Path
+    </Link>
   </section>
   )
 }
